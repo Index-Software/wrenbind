@@ -1,0 +1,9 @@
+[project]
+name = "wrenbind"
+version = "1.0.0"
+description = "A Wren binding code generation framework for C++ projects."
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
