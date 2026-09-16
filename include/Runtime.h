@@ -12,7 +12,7 @@
 #pragma once
 
 #include "wren.hpp"
-#include "../public/tier0/platform.h"
+#include "../public/platform.h"
 #include "Handle.h"
 
 struct BindingEntry_t

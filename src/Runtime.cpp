@@ -7,8 +7,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "Runtime.h"
-#include "../public/tier0/platform.h"
-#include "../public/tier0/dbg.h"
+#include "../public/platform.h"
+#include "../public/dbg.h"
 #include <string.h>
 
 Handle_t GetForeign(WrenVM* pVm, int slot)

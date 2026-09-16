@@ -18,7 +18,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#include "tier0/platform.h"
+#include "platform.h"
 
 template<typename T>
 class CWrenBindArg

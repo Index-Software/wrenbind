@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "../public/tier0/platform.h"
+#include "../public/platform.h"
 
 template<typename T>
 class CWrenBindSingleton
