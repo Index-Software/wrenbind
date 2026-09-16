@@ -11,7 +11,13 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "wren.h"
+#ifdef __cplusplus
+}
+#endif
 #include "tier0/platform.h"
 
 template<typename T>

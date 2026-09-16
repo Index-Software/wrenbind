@@ -738,7 +738,13 @@ class BindingGenerator:
         hdr_lines.append("")
         hdr_lines.append("#pragma once")
         hdr_lines.append("")
+        hdr_lines.append("#ifdef __cplusplus")
+        hdr_lines.append('extern "C" {')
+        hdr_lines.append("#endif")
         hdr_lines.append('#include "wren.h"')
+        hdr_lines.append("#ifdef __cplusplus")
+        hdr_lines.append("}")
+        hdr_lines.append("#endif")
         hdr_lines.append("")
         for s in self._singletons:
             hdr_lines.append(f"class {s.type};")
