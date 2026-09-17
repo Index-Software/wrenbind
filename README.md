@@ -65,7 +65,7 @@ public:
 ```
 
 ```bash
-python3 tools/generate_bindings.py \
+python3 wrenbind/generate_bindings.py \
     --input MyClass.h \
     --include include \
     --output MyClass.gen.cpp --header-output MyClass.gen.h
