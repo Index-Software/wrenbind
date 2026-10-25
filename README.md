@@ -10,28 +10,7 @@ wrenbind is a lightweight framework for binding C++ classes to the [Wren scripti
 
 - [wren](https://github.com/wren-lang/wren)
 - [libclang](https://llvm.org/) (Python `clang.cindex` for code generation)
-- [`public/tier0/platform.h`](https://gist.github.com/rs189/0a5cd6dca531814218f2e31dab0556ca) (internal platform definitions)
-
-
-## Interface
-
-### BindingEntry_t
-- `const char* m_ClassName`
-- `const char* m_Signature`
-- `WrenForeignMethodFn m_Function`
-- `bool m_IsStatic`
-
-### CWrenBindSingleton
-- `static void Set(T* pInstance)`
-
-### CWrenBindAllocator
-- `static void* Alloc(size_t size)`
-- `static void Free(void* pMemory)`
-
-### CWrenBindArg
-- `static T Get(WrenVM* pVm, int slot)`
-- `static void Set(WrenVM* pVm, const T& val)`
-- `static void SetAt(WrenVM* pVm, int slot, const T& val)`
+- [`public/platform.h`](public/platform.h) (internal platform definitions)
 
 ## Usage
 
@@ -62,6 +41,28 @@ public:
 };
 
 #endif // WREN_BIND_CODEGEN
+```
+
+A process-wide object can be exposed as a singleton:
+
+```cpp
+class CMyClass
+{
+public:
+    WREN_SINGLETON_DECL()
+
+    CMyObject CreateObject() WREN_BIND_SINGLETON("createObject()", s_pMyClass);
+
+    // Use a forwarder when the generator cannot express the call
+    void AddComponent(uint32 id, CMyComponent* pComp)
+        WREN_BIND_FWD("addComponent(_,_)", "WrenFwd_CMyClass_AddComponent");
+};
+```
+
+Set the instance once, after the VM is created:
+
+```cpp
+WREN_SET_SINGLETON(CMyClass, pMyClass);
 ```
 
 ```bash
