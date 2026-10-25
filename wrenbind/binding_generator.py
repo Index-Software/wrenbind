@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 import glob
 import os
 import re
 import sys
+from dataclasses import dataclass
 from typing import Optional
 
 import clang.cindex
@@ -162,7 +162,7 @@ class BindingGenerator:
         self._scan_wren_scripts(wren_scripts_dir)
 
         self.all_methods: list[Method] = []
-        self.seen_methods: set[tuple] = set()
+        self.seen_methods: set[tuple[str, str, str]] = set()
         self._singletons: list[Singleton] = []
         self._seen_singletons: set[tuple[str, str]] = set()
         self._seen_classes: set[str] = set()
@@ -181,6 +181,8 @@ class BindingGenerator:
                 module = rel.replace("\\", "/")
                 if module.endswith(".wren"):
                     module = module[:-5]
+                # <namespace>/scripts/<path> is imported as <namespace>/<path>
+                module = re.sub(r"^([^/]+)/scripts/", r"\1/", module)
                 with open(fpath, "r") as fh:
                     for line in fh:
                         m = re.match(r"^\s*foreign\s+class\s+(\w+)", line)
@@ -487,6 +489,7 @@ class BindingGenerator:
         lines.append('#include "Handle.h"')
         lines.append('#include "Arg.h"')
         lines.append('#include "Alloc.h"')
+        lines.append('#include "Class.h"')
         lines.append('#include <new>')
         lines.append('#include <string.h>')
 
@@ -525,8 +528,16 @@ class BindingGenerator:
             )
             lines.append("const int s_NumGeneratedBindings = 0;")
             lines.append(
-                "WrenForeignClassMethods s_GeneratedClassMethods("
-                "WrenVM* pVm, const char* pModule, "
+                "CWrenBindClass* const CWrenBind::s_GeneratedClasses[] = "
+                "{ WB_NULL };",
+            )
+            lines.append("const int CWrenBind::s_NumGeneratedClasses = 0;")
+            lines.append("void CWrenBind::RegisterClasses()")
+            lines.append("{")
+            lines.append("}")
+            lines.append("WrenForeignClassMethods s_GeneratedClassMethods(")
+            lines.append(
+                "\tWrenVM* pVm, const char* pModule, "
                 "const char* pClassName)",
             )
             lines.append("{")
@@ -537,7 +548,7 @@ class BindingGenerator:
             lines.append("}")
             with open(output_file, "w") as f:
                 f.write("\n".join(lines))
-            print("[INFO] Generated empty bindings (no annotations found)")
+            print("Generated empty bindings (no annotations found)")
 
             return
 
@@ -572,7 +583,6 @@ class BindingGenerator:
                 continue
 
             if singleton:
-                is_static_val = True
                 if singleton.startswith("::"):
                     this_expr = singleton[2:]
                     use_colon_colon = True
@@ -584,7 +594,6 @@ class BindingGenerator:
                     f"static_cast<{cpp_class}*>("
                     f"HandleToPtr(GetForeign(pVm, 0)))"
                 )
-                is_static_val = False
                 use_colon_colon = False
 
             arg_exprs = self._build_args(m.params)
@@ -622,13 +631,19 @@ class BindingGenerator:
                 lines.append(f"\t{return_writer};")
                 lines.append("}")
 
+        ref_classes: set[str] = set()
+        for m in self.all_methods:
+            ref_match = re.match(r"CRef<\s*(\w+)\s*>", m.return_type)
+            if ref_match:
+                ref_classes.add(ref_match.group(1))
+
         foreign_classes: dict[str, str] = {}
         for m in self.all_methods:
             cls = m.class_name
-            if cls in foreign_classes:
+            if foreign_classes.get(cls) == "owned":
                 continue
 
-            is_owned = m.is_constructor
+            is_owned = m.is_constructor or cls in ref_classes
             foreign_classes[cls] = "owned" if is_owned else "borrowed"
 
         lines.append("")
@@ -699,9 +714,47 @@ class BindingGenerator:
 
                 lines.append("")
 
+        instance_classes = [
+            cls for cls in sorted(foreign_classes)
+            if foreign_classes[cls] == "owned"
+            and cls in self._foreign_class_map
+        ]
+        for cls in sorted(foreign_classes):
+            if foreign_classes[cls] == "owned" and cls not in instance_classes:
+                print(f"[WARNING] No Wren class found for {cls}")
+
+        for cls in instance_classes:
+            lines.append(
+                f'static CWrenBindClass s_Class_{cls}('
+                f'"{self._foreign_class_map[cls]}", "{cls}");',
+            )
+        lines.append("")
+        lines.append("CWrenBindClass* const CWrenBind::s_GeneratedClasses[] =")
+        lines.append("{")
+        for cls in instance_classes:
+            lines.append(f"\t&s_Class_{cls},")
+        lines.append("\tWB_NULL")
+        lines.append("};")
+        lines.append("")
         lines.append(
-            "WrenForeignClassMethods s_GeneratedClassMethods("
-            "WrenVM* pVm, const char* pModule, const char* pClassName)",
+            "const int CWrenBind::s_NumGeneratedClasses = "
+            "sizeof(CWrenBind::s_GeneratedClasses) / "
+            "sizeof(CWrenBind::s_GeneratedClasses[0]) - 1;",
+        )
+        lines.append("")
+        lines.append("void CWrenBind::RegisterClasses()")
+        lines.append("{")
+        for cls in instance_classes:
+            lines.append(
+                f"\tCWrenBindClassOf<{cls}>::s_pClass = &s_Class_{cls};",
+            )
+        lines.append("}")
+        lines.append("")
+
+        lines.append("WrenForeignClassMethods s_GeneratedClassMethods(")
+        lines.append(
+            "\tWrenVM* pVm, const char* pModule, "
+            "const char* pClassName)",
         )
         lines.append("{")
         lines.append("\t(void)pVm; (void)pModule;")
@@ -721,7 +774,7 @@ class BindingGenerator:
         with open(output_file, "w") as f:
             f.write("\n".join(lines))
         print(
-            f"[INFO] Generated {len(self.all_methods)} bindings "
+            f"Generated {len(self.all_methods)} bindings "
             f"-> {output_file}",
         )
 
@@ -753,7 +806,7 @@ class BindingGenerator:
         with open(header_output_file, "w") as f:
             f.write("\n".join(hdr_lines))
         print(
-            f"[INFO] Generated header with forward declarations "
+            f"Generated header with forward declarations "
             f"-> {header_output_file}",
         )
 
@@ -773,6 +826,12 @@ def generate_empty_output(output_file: str) -> None:
         )
         f.write("const int s_NumGeneratedBindings = 0;\n")
         f.write(
+            "CWrenBindClass* const CWrenBind::s_GeneratedClasses[] = "
+            "{ WB_NULL };\n",
+        )
+        f.write("const int CWrenBind::s_NumGeneratedClasses = 0;\n")
+        f.write("void CWrenBind::RegisterClasses()\n{\n}\n")
+        f.write(
             "WrenForeignClassMethods s_GeneratedClassMethods(\n"
             "\tWrenVM* pVm, const char* pModule, "
             "const char* pClassName)\n",
@@ -782,4 +841,4 @@ def generate_empty_output(output_file: str) -> None:
         f.write("\tWrenForeignClassMethods m = { 0, 0 };\n")
         f.write("\n\treturn m;\n")
         f.write("}\n")
-    print("[INFO] Generated empty bindings (no annotations found)")
+    print("Generated empty bindings (no annotations found)")

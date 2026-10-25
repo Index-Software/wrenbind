@@ -21,8 +21,6 @@ Handle_t GetForeign(WrenVM* pVm, int slot)
 
 static void s_WriteFn(WrenVM* pVm, const char* pText)
 {
-	(void)pVm;
-
 	Msg("[Wren] %s\n", pText);
 }
 
@@ -33,8 +31,6 @@ static void s_ErrorFn(
 	int line,
 	const char* pMessage)
 {
-	(void)pVm;
-
 	switch (type)
 	{
 	case WREN_ERROR_COMPILE:
@@ -65,8 +61,6 @@ static WrenForeignMethodFn s_BindMethodFn(
 	bool isStatic,
 	const char* pSignature)
 {
-	(void)pVm;
-
 	for (int i = 0; i < s_NumGeneratedBindings; i++)
 	{
 		if (strcmp(s_GeneratedBindings[i].m_ClassName, pClassName) == 0 &&
@@ -91,9 +85,6 @@ static WrenForeignClassMethods s_BindClassFn(
 	const char* pModule,
 	const char* pClassName)
 {
-	(void)pVm;
-	(void)pModule;
-
 	return s_GeneratedClassMethods(pVm, pModule, pClassName);
 }
 

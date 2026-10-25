@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "platform.h"
+#include "../public/platform.h"
 
 typedef uintp Handle_t;
 
