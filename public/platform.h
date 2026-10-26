@@ -41,4 +41,13 @@ typedef unsigned int uint32;
 typedef float float32;
 typedef double float64;
 
+// Pointer-sized integer types
+#if defined( _WIN64 ) || defined( __LP64__ )
+	typedef int64 intp;
+	typedef uint64 uintp;
+#else // _WIN64 || __LP64__
+	typedef int32 intp;
+	typedef uint32 uintp;
+#endif // _WIN64 || __LP64__
+
 #endif // WB_PLATFORM_H
