@@ -17,6 +17,19 @@ template<typename T>
 class CWrenBindSingleton
 {
 public:
+	CWrenBindSingleton()
+	{
+		s_pInstance = static_cast<T*>(this);
+	}
+
+	~CWrenBindSingleton()
+	{
+		if (s_pInstance == static_cast<T*>(this))
+		{
+			s_pInstance = WB_NULL;
+		}
+	}
+
 	static T* s_pInstance;
 
 	static void Set(T* pInstance)
