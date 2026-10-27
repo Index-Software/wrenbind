@@ -28,6 +28,7 @@ class Param:
     type: str
     type_kind: clang.cindex.TypeKind
     type_canonical: str
+    type_canonical_kind: Optional[clang.cindex.TypeKind] = None
 
 
 @dataclass
@@ -47,6 +48,7 @@ class Method:
     return_type: str
     return_type_kind: Optional[clang.cindex.TypeKind]
     return_type_canonical: str
+    return_type_canonical_kind: Optional[clang.cindex.TypeKind] = None
     cxx_expr: Optional[str] = None
     singleton: Optional[str] = None
     forwarder_fn: Optional[str] = None
@@ -287,8 +289,11 @@ class BindingGenerator:
                 for p in cursor.get_children():
                     if p.kind == clang.cindex.CursorKind.PARM_DECL:
                         canonical = ""
+                        canonical_kind = p.type.kind
                         try:
-                            canonical = p.type.get_canonical().spelling
+                            canonical_type = p.type.get_canonical()
+                            canonical = canonical_type.spelling
+                            canonical_kind = canonical_type.kind
                         except AttributeError:
                             canonical = p.type.spelling
                         params.append(
@@ -297,6 +302,7 @@ class BindingGenerator:
                                 type=p.type.spelling,
                                 type_kind=p.type.kind,
                                 type_canonical=canonical,
+                                type_canonical_kind=canonical_kind,
                             )
                         )
 
@@ -315,11 +321,14 @@ class BindingGenerator:
 
                 ret_canonical = ""
                 ret_kind = None
+                ret_canonical_kind = None
                 if not info.is_constructor:
                     try:
-                        ret_canonical = (
-                            cursor.result_type.get_canonical().spelling
+                        ret_canonical_type = (
+                            cursor.result_type.get_canonical()
                         )
+                        ret_canonical = ret_canonical_type.spelling
+                        ret_canonical_kind = ret_canonical_type.kind
                         ret_kind = cursor.result_type.kind
                     except AttributeError:
                         ret_canonical = cursor.result_type.spelling
@@ -339,6 +348,7 @@ class BindingGenerator:
                     return_type=ret_type,
                     return_type_kind=ret_kind,
                     return_type_canonical=ret_canonical,
+                    return_type_canonical_kind=ret_canonical_kind,
                     cxx_expr=info.cxx_expr,
                     singleton=info.singleton,
                     forwarder_fn=info.forwarder_fn,
@@ -369,17 +379,33 @@ class BindingGenerator:
 
         return False
 
+    @staticmethod
+    def _is_enum(
+        type_kind: Optional[clang.cindex.TypeKind],
+        canonical_kind: Optional[clang.cindex.TypeKind],
+    ) -> bool:
+        return type_kind == clang.cindex.TypeKind.ENUM or (
+            type_kind == clang.cindex.TypeKind.ELABORATED
+            and canonical_kind == clang.cindex.TypeKind.ENUM
+        )
+
     def _dispatch_read(
         self,
         ntype: str,
         type_spelling: str,
         type_kind: clang.cindex.TypeKind,
         type_canonical: str,
+        type_canonical_kind: Optional[clang.cindex.TypeKind],
         slot: int,
     ) -> tuple[str, int]:
-        if type_kind == clang.cindex.TypeKind.ENUM:
+        if self._is_enum(type_kind, type_canonical_kind):
+            cast_type = (
+                type_canonical
+                if type_kind == clang.cindex.TypeKind.ELABORATED
+                else type_spelling
+            )
             return (
-                f"static_cast<{type_spelling}>(static_cast<int32>("
+                f"static_cast<{cast_type}>(static_cast<int32>("
                 f"wrenGetSlotDouble(pVm, {slot})))",
                 1,
             )
@@ -428,9 +454,10 @@ class BindingGenerator:
         type_spelling: str,
         type_kind: clang.cindex.TypeKind,
         type_canonical: str,
+        type_canonical_kind: Optional[clang.cindex.TypeKind],
         expr: str,
     ) -> str:
-        if type_kind == clang.cindex.TypeKind.ENUM:
+        if self._is_enum(type_kind, type_canonical_kind):
             return (
                 f"wrenSetSlotDouble(pVm, 0, "
                 f"static_cast<float64>({expr}))"
@@ -463,7 +490,12 @@ class BindingGenerator:
         for p in params:
             ntype = normalize_type(p.type)
             expr, consumed = self._dispatch_read(
-                ntype, p.type, p.type_kind, p.type_canonical, slot
+                ntype,
+                p.type,
+                p.type_kind,
+                p.type_canonical,
+                p.type_canonical_kind,
+                slot,
             )
             arg_exprs.append(expr)
             slot += consumed
@@ -618,6 +650,7 @@ class BindingGenerator:
                     ret,
                     m.return_type_kind,
                     m.return_type_canonical,
+                    m.return_type_canonical_kind,
                     call_expr,
                 )
 
