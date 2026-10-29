@@ -33,8 +33,7 @@ extern const int s_NumGeneratedBindings;
 extern WrenForeignClassMethods s_GeneratedClassMethods(
 	WrenVM* pVm,
 	const char* pModule,
-	const char* pClassName
-);
+	const char* pClassName);
 
 void WrenSetupConfig(WrenConfiguration* pConfig);
 

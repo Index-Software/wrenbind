@@ -1,4 +1,3 @@
-import re
 from typing import Callable, Optional
 
 
@@ -45,12 +44,6 @@ TYPE_WRITERS: dict[str, Optional[str]] = {
 
 ENUM_WRITER: str = "wrenSetSlotDouble(pVm, 0, static_cast<float64>({expr}))"
 
-MULTI_SLOT_TYPES: dict[str, int] = {
-    "CVector4": 4,
-}
-
-KEYS_MULTI_SLOT: frozenset[str] = frozenset(MULTI_SLOT_TYPES.keys())
-
 
 def normalize_type(raw_type: str) -> str:
     return raw_type.strip()
@@ -72,15 +65,3 @@ def get_builtin_writer(ntype: str, expr: str) -> Optional[str]:
         return None
 
     return template.format(expr=expr)
-
-
-def format_slot(expr: str, slot: int) -> str:
-    return re.sub(
-        r"\{slot(\+(\d+))?\}",
-        lambda m: str(slot + int(m.group(2) or 0)),
-        expr,
-    )
-
-
-def slot_count_for(ntype: str) -> int:
-    return MULTI_SLOT_TYPES.get(ntype, 1)

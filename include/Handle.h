@@ -20,9 +20,9 @@ static inline Handle_t PtrToHandle(void* pPtr)
 	return reinterpret_cast<Handle_t>(pPtr);
 }
 
-static inline void* HandleToPtr(Handle_t handle)
+static inline void* HandleToPtr(Handle_t hHandle)
 {
-	return reinterpret_cast<void*>(handle);
+	return reinterpret_cast<void*>(hHandle);
 }
 
 #endif // HANDLE_H
