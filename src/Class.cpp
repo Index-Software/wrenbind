@@ -12,52 +12,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-CWrenBindClass::CWrenBindClass(const char* pModule, const char* pClassName) :
-	m_pModule(pModule),
-	m_pClassName(pClassName),
-	m_pVM(WB_NULL),
-	m_pHandle(WB_NULL)
-{
-}
-
-void CWrenBindClass::Find(WrenVM* pVm)
-{
-	m_pVM = pVm;
-	m_pHandle = WB_NULL;
-
-	if (!wrenHasModule(pVm, m_pModule) ||
-		!wrenHasVariable(pVm, m_pModule, m_pClassName))
-	{
-		Error("[Wren] Class not found: %s.%s\n", m_pModule, m_pClassName);
-
-		return;
-	}
-
-	wrenEnsureSlots(pVm, 1);
-	wrenGetVariable(pVm, m_pModule, m_pClassName, 0);
-
-	// A handle is a GC root, so the class cannot be collected
-	m_pHandle = wrenGetSlotHandle(pVm, 0);
-}
-
-WrenHandle* CWrenBindClass::Get(WrenVM* pVm)
-{
-	if (m_pVM == WB_NULL)
-	{
-		Find(pVm);
-	}
-	else
-	{
-		AssertMsg(pVm == m_pVM, "CWrenBindClass used with another VM");
-	}
-
-	return m_pHandle;
-}
-
 static bool s_ImportClasses(WrenVM* pVm)
 {
 	size_t length = 1;
-	for (int i = 0; i < CWrenBind::s_NumGeneratedClasses; i++)
+	for (int32 i = 0; i < CWrenBind::s_NumGeneratedClasses; i++)
 	{
 		length += strlen(CWrenBind::s_GeneratedClasses[i]->Module()) +
 			strlen(CWrenBind::s_GeneratedClasses[i]->Name()) + 16;
@@ -70,7 +28,7 @@ static bool s_ImportClasses(WrenVM* pVm)
 	}
 
 	pSource[0] = '\0';
-	for (int i = 0; i < CWrenBind::s_NumGeneratedClasses; i++)
+	for (int32 i = 0; i < CWrenBind::s_NumGeneratedClasses; i++)
 	{
 		size_t used = strlen(pSource);
 		snprintf(
@@ -89,7 +47,7 @@ static bool s_ImportClasses(WrenVM* pVm)
 
 	if (result != WREN_RESULT_SUCCESS)
 	{
-		Error("[Wren] Failed to load the classes of the bindings\n");
+		Error("[CWrenBind] Failed to load the classes of the bindings\n");
 
 		return false;
 	}
@@ -99,7 +57,7 @@ static bool s_ImportClasses(WrenVM* pVm)
 
 static bool s_FindClasses(WrenVM* pVm)
 {
-	for (int i = 0; i < CWrenBind::s_NumGeneratedClasses; i++)
+	for (int32 i = 0; i < CWrenBind::s_NumGeneratedClasses; i++)
 	{
 		if (!CWrenBind::s_GeneratedClasses[i]->Get(pVm))
 		{
@@ -108,6 +66,48 @@ static bool s_FindClasses(WrenVM* pVm)
 	}
 
 	return true;
+}
+
+CWrenBindClass::CWrenBindClass(const char* pModule, const char* pClassName) :
+	m_pModule(pModule),
+	m_pClassName(pClassName),
+	m_pVM(WB_NULL),
+	m_pHandle(WB_NULL)
+{
+}
+
+WrenHandle* CWrenBindClass::Get(WrenVM* pVm)
+{
+	if (m_pVM == WB_NULL)
+	{
+		Find(pVm);
+	}
+	else
+	{
+		AssertMsg(pVm == m_pVM, "CWrenBindClass used with another VM");
+	}
+
+	return m_pHandle;
+}
+
+void CWrenBindClass::Find(WrenVM* pVm)
+{
+	m_pVM = pVm;
+	m_pHandle = WB_NULL;
+
+	if (!wrenHasModule(pVm, m_pModule) ||
+		!wrenHasVariable(pVm, m_pModule, m_pClassName))
+	{
+		Error("[CWrenBind] Class not found: %s.%s\n", m_pModule, m_pClassName);
+
+		return;
+	}
+
+	wrenEnsureSlots(pVm, 1);
+	wrenGetVariable(pVm, m_pModule, m_pClassName, 0);
+
+	// A handle is a GC root, so the class cannot be collected
+	m_pHandle = wrenGetSlotHandle(pVm, 0);
 }
 
 bool CWrenBind::Init(WrenVM* pVm)

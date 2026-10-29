@@ -52,13 +52,13 @@ def main() -> None:
     parser.add_argument(
         "--include",
         action="append",
-        default=[],
+        default=None,
         help="Include paths for libclang parsing (repeatable)",
     )
     parser.add_argument(
         "--force-include",
         action="append",
-        default=[],
+        default=None,
         help="Additional header path to emit as #include in the generated "
         "source (repeatable)",
     )
@@ -85,6 +85,12 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    if args.include is None:
+        args.include = []
+
+    if args.force_include is None:
+        args.force_include = []
+
     include_args = ["-std=c++98", "-x", "c++", "-DWREN_BIND_CODEGEN"]
     for path in args.include:
         include_args.append(f"-I{path}")
@@ -93,7 +99,11 @@ def main() -> None:
         for path in detect_cxx_include_paths():
             include_args.append(f"-I{path}")
 
-    generator = BindingGenerator(args.wren_scripts, args.include, libclang_path=args.libclang)
+    generator = BindingGenerator(
+        args.wren_scripts,
+        args.include,
+        libclang_path=args.libclang,
+    )
     generator.parse_files(args.input, include_args)
 
     if not generator.all_methods:
@@ -103,6 +113,7 @@ def main() -> None:
                 file=sys.stderr,
             )
         generate_empty_output(args.output)
+
         return
 
     generator.generate(args.output, args.header_output, args.force_include)

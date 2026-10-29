@@ -13,11 +13,11 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif // __cplusplus
 #include "wren.h"
 #ifdef __cplusplus
 }
-#endif
+#endif // __cplusplus
 #include "../public/platform.h"
 
 template<typename T>

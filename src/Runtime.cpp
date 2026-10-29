@@ -14,14 +14,17 @@
 Handle_t GetForeign(WrenVM* pVm, int slot)
 {
 	void* pData = wrenGetSlotForeign(pVm, slot);
-	if (!pData) return WB_NULL;
+	if (!pData)
+	{
+		return WB_NULL;
+	}
 
 	return *static_cast<Handle_t*>(pData);
 }
 
 static void s_WriteFn(WrenVM* pVm, const char* pText)
 {
-	Msg("[Wren] %s\n", pText);
+	Msg("%s\n", pText);
 }
 
 static void s_ErrorFn(
@@ -34,18 +37,18 @@ static void s_ErrorFn(
 	switch (type)
 	{
 	case WREN_ERROR_COMPILE:
-		Error("[Wren Compile Error] %s line %d: %s\n",
+		Error("[CWrenBind] Compile error in %s line %d: %s\n",
 			pModule ? pModule : "?",
 			line,
 			pMessage);
 
 		break;
 	case WREN_ERROR_RUNTIME:
-		Error("[Wren Runtime Error] %s\n", pMessage);
+		Error("[CWrenBind] Runtime error: %s\n", pMessage);
 
 		break;
 	case WREN_ERROR_STACK_TRACE:
-		Error("[Wren Stack Trace] %s line %d: %s\n",
+		Error("[CWrenBind] Stack trace %s line %d: %s\n",
 			pModule ? pModule : "?",
 			line,
 			pMessage);
@@ -61,7 +64,7 @@ static WrenForeignMethodFn s_BindMethodFn(
 	bool isStatic,
 	const char* pSignature)
 {
-	for (int i = 0; i < s_NumGeneratedBindings; i++)
+	for (int32 i = 0; i < s_NumGeneratedBindings; i++)
 	{
 		if (strcmp(s_GeneratedBindings[i].m_ClassName, pClassName) == 0 &&
 			s_GeneratedBindings[i].m_IsStatic == isStatic &&
@@ -71,7 +74,7 @@ static WrenForeignMethodFn s_BindMethodFn(
 		}
 	}
 
-	Error("[Wren] Unbound method: %s.%s%s %s\n",
+	Error("[CWrenBind] Unbound method: %s.%s%s %s\n",
 		pModule,
 		pClassName,
 		isStatic ? ".static" : "",
