@@ -11,9 +11,9 @@
 #include "../public/dbg.h"
 #include <string.h>
 
-Handle_t GetForeign(WrenVM* pVm, int slot)
+Handle_t GetForeign(WrenVM* pVM, int slot)
 {
-	void* pData = wrenGetSlotForeign(pVm, slot);
+	void* pData = wrenGetSlotForeign(pVM, slot);
 	if (!pData)
 	{
 		return WB_NULL;
@@ -22,13 +22,13 @@ Handle_t GetForeign(WrenVM* pVm, int slot)
 	return *static_cast<Handle_t*>(pData);
 }
 
-static void s_WriteFn(WrenVM* pVm, const char* pText)
+static void s_WriteFn(WrenVM* pVM, const char* pText)
 {
 	Msg("%s\n", pText);
 }
 
 static void s_ErrorFn(
-	WrenVM* pVm,
+	WrenVM* pVM,
 	WrenErrorType type,
 	const char* pModule,
 	int line,
@@ -58,7 +58,7 @@ static void s_ErrorFn(
 }
 
 static WrenForeignMethodFn s_BindMethodFn(
-	WrenVM* pVm,
+	WrenVM* pVM,
 	const char* pModule,
 	const char* pClassName,
 	bool isStatic,
@@ -84,11 +84,11 @@ static WrenForeignMethodFn s_BindMethodFn(
 }
 
 static WrenForeignClassMethods s_BindClassFn(
-	WrenVM* pVm,
+	WrenVM* pVM,
 	const char* pModule,
 	const char* pClassName)
 {
-	return s_GeneratedClassMethods(pVm, pModule, pClassName);
+	return s_GeneratedClassMethods(pVM, pModule, pClassName);
 }
 
 void WrenSetupConfig(WrenConfiguration* pConfig)

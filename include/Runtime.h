@@ -26,12 +26,12 @@ struct BindingEntry_t
 #define BIND(cls, sig, func, isStatic) { cls, sig, func, isStatic }
 
 // Reads the Handle_t stored in a foreign class slot
-Handle_t GetForeign(WrenVM* pVm, int slot);
+Handle_t GetForeign(WrenVM* pVM, int slot);
 
 extern BindingEntry_t s_GeneratedBindings[];
 extern const int s_NumGeneratedBindings;
 extern WrenForeignClassMethods s_GeneratedClassMethods(
-	WrenVM* pVm,
+	WrenVM* pVM,
 	const char* pModule,
 	const char* pClassName);
 

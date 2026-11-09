@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool s_ImportClasses(WrenVM* pVm)
+static bool s_ImportClasses(WrenVM* pVM)
 {
 	size_t length = 1;
 	for (int32 i = 0; i < CWrenBind::s_NumGeneratedClasses; i++)
@@ -40,7 +40,7 @@ static bool s_ImportClasses(WrenVM* pVm)
 	}
 
 	WrenInterpretResult result = wrenInterpret(
-		pVm,
+		pVM,
 		"wrenbind/classes",
 		pSource);
 	free(pSource);
@@ -55,11 +55,11 @@ static bool s_ImportClasses(WrenVM* pVm)
 	return true;
 }
 
-static bool s_FindClasses(WrenVM* pVm)
+static bool s_FindClasses(WrenVM* pVM)
 {
 	for (int32 i = 0; i < CWrenBind::s_NumGeneratedClasses; i++)
 	{
-		if (!CWrenBind::s_GeneratedClasses[i]->Get(pVm))
+		if (!CWrenBind::s_GeneratedClasses[i]->Get(pVM))
 		{
 			return false;
 		}
@@ -76,48 +76,48 @@ CWrenBindClass::CWrenBindClass(const char* pModule, const char* pClassName) :
 {
 }
 
-WrenHandle* CWrenBindClass::Get(WrenVM* pVm)
+WrenHandle* CWrenBindClass::Get(WrenVM* pVM)
 {
 	if (m_pVM == WB_NULL)
 	{
-		Find(pVm);
+		Find(pVM);
 	}
 	else
 	{
-		AssertMsg(pVm == m_pVM, "CWrenBindClass used with another VM");
+		AssertMsg(pVM == m_pVM, "CWrenBindClass used with another VM");
 	}
 
 	return m_pHandle;
 }
 
-void CWrenBindClass::Find(WrenVM* pVm)
+void CWrenBindClass::Find(WrenVM* pVM)
 {
-	m_pVM = pVm;
+	m_pVM = pVM;
 	m_pHandle = WB_NULL;
 
-	if (!wrenHasModule(pVm, m_pModule) ||
-		!wrenHasVariable(pVm, m_pModule, m_pClassName))
+	if (!wrenHasModule(pVM, m_pModule) ||
+		!wrenHasVariable(pVM, m_pModule, m_pClassName))
 	{
 		Error("[CWrenBind] Class not found: %s.%s\n", m_pModule, m_pClassName);
 
 		return;
 	}
 
-	wrenEnsureSlots(pVm, 1);
-	wrenGetVariable(pVm, m_pModule, m_pClassName, 0);
+	wrenEnsureSlots(pVM, 1);
+	wrenGetVariable(pVM, m_pModule, m_pClassName, 0);
 
 	// A handle is a GC root, so the class cannot be collected
-	m_pHandle = wrenGetSlotHandle(pVm, 0);
+	m_pHandle = wrenGetSlotHandle(pVM, 0);
 }
 
-bool CWrenBind::Init(WrenVM* pVm)
+bool CWrenBind::Init(WrenVM* pVM)
 {
 	RegisterClasses();
 
-	if (!s_ImportClasses(pVm))
+	if (!s_ImportClasses(pVM))
 	{
 		return false;
 	}
 
-	return s_FindClasses(pVm);
+	return s_FindClasses(pVM);
 }

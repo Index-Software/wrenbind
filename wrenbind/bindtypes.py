@@ -2,47 +2,47 @@ from typing import Callable, Optional
 
 
 TYPE_READERS: dict[str, Callable[[int], tuple[str, int]]] = {
-    "float64": (lambda s: (f"wrenGetSlotDouble(pVm, {s})", 1)),
+    "float64": (lambda s: (f"wrenGetSlotDouble(pVM, {s})", 1)),
     "float32": (
-        lambda s: (f"static_cast<float32>(wrenGetSlotDouble(pVm, {s}))", 1)
+        lambda s: (f"static_cast<float32>(wrenGetSlotDouble(pVM, {s}))", 1)
     ),
     "int32": (
-        lambda s: (f"static_cast<int32>(wrenGetSlotDouble(pVm, {s}))", 1)
+        lambda s: (f"static_cast<int32>(wrenGetSlotDouble(pVM, {s}))", 1)
     ),
     "uint32": (
-        lambda s: (f"static_cast<uint32>(wrenGetSlotDouble(pVm, {s}))", 1)
+        lambda s: (f"static_cast<uint32>(wrenGetSlotDouble(pVM, {s}))", 1)
     ),
     "int8": (
-        lambda s: (f"static_cast<int8>(wrenGetSlotDouble(pVm, {s}))", 1)
+        lambda s: (f"static_cast<int8>(wrenGetSlotDouble(pVM, {s}))", 1)
     ),
     "uint8": (
-        lambda s: (f"static_cast<uint8>(wrenGetSlotDouble(pVm, {s}))", 1)
+        lambda s: (f"static_cast<uint8>(wrenGetSlotDouble(pVM, {s}))", 1)
     ),
     "int64": (
-        lambda s: (f"static_cast<int64>(wrenGetSlotDouble(pVm, {s}))", 1)
+        lambda s: (f"static_cast<int64>(wrenGetSlotDouble(pVM, {s}))", 1)
     ),
     "uint64": (
-        lambda s: (f"static_cast<uint64>(wrenGetSlotDouble(pVm, {s}))", 1)
+        lambda s: (f"static_cast<uint64>(wrenGetSlotDouble(pVM, {s}))", 1)
     ),
-    "bool": (lambda s: (f"wrenGetSlotBool(pVm, {s})", 1)),
-    "const char *": (lambda s: (f"wrenGetSlotString(pVm, {s})", 1)),
+    "bool": (lambda s: (f"wrenGetSlotBool(pVM, {s})", 1)),
+    "const char *": (lambda s: (f"wrenGetSlotString(pVM, {s})", 1)),
 }
 
 TYPE_WRITERS: dict[str, Optional[str]] = {
     "void": None,
-    "float64": "wrenSetSlotDouble(pVm, 0, {expr})",
-    "bool": "wrenSetSlotBool(pVm, 0, {expr})",
-    "float32": "wrenSetSlotDouble(pVm, 0, static_cast<float64>({expr}))",
-    "int32": "wrenSetSlotDouble(pVm, 0, static_cast<float64>({expr}))",
-    "uint32": "wrenSetSlotDouble(pVm, 0, static_cast<float64>({expr}))",
-    "int8": "wrenSetSlotDouble(pVm, 0, static_cast<float64>({expr}))",
-    "uint8": "wrenSetSlotDouble(pVm, 0, static_cast<float64>({expr}))",
-    "int64": "wrenSetSlotDouble(pVm, 0, static_cast<float64>({expr}))",
-    "uint64": "wrenSetSlotDouble(pVm, 0, static_cast<float64>({expr}))",
-    "const char *": "wrenSetSlotString(pVm, 0, {expr})",
+    "float64": "wrenSetSlotDouble(pVM, 0, {expr})",
+    "bool": "wrenSetSlotBool(pVM, 0, {expr})",
+    "float32": "wrenSetSlotDouble(pVM, 0, static_cast<float64>({expr}))",
+    "int32": "wrenSetSlotDouble(pVM, 0, static_cast<float64>({expr}))",
+    "uint32": "wrenSetSlotDouble(pVM, 0, static_cast<float64>({expr}))",
+    "int8": "wrenSetSlotDouble(pVM, 0, static_cast<float64>({expr}))",
+    "uint8": "wrenSetSlotDouble(pVM, 0, static_cast<float64>({expr}))",
+    "int64": "wrenSetSlotDouble(pVM, 0, static_cast<float64>({expr}))",
+    "uint64": "wrenSetSlotDouble(pVM, 0, static_cast<float64>({expr}))",
+    "const char *": "wrenSetSlotString(pVM, 0, {expr})",
 }
 
-ENUM_WRITER: str = "wrenSetSlotDouble(pVm, 0, static_cast<float64>({expr}))"
+ENUM_WRITER: str = "wrenSetSlotDouble(pVM, 0, static_cast<float64>({expr}))"
 
 
 def normalize_type(raw_type: str) -> str:
