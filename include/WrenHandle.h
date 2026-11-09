@@ -17,8 +17,8 @@
 class CWrenHandle
 {
 public:
-	CWrenHandle(WrenVM* pVm, WrenHandle* pHandle) :
-		m_pVM(pVm),
+	CWrenHandle(WrenVM* pVM, WrenHandle* pHandle) :
+		m_pVM(pVM),
 		m_pHandle(pHandle)
 	{
 	}

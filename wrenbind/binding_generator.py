@@ -410,7 +410,7 @@ class BindingGenerator:
             )
             return (
                 f"static_cast<{cast_type}>(static_cast<int32>("
-                f"wrenGetSlotDouble(pVm, {slot})))",
+                f"wrenGetSlotDouble(pVM, {slot})))",
                 1,
             )
 
@@ -427,7 +427,7 @@ class BindingGenerator:
             return (
                 f"static_cast<{base}*>(HandleToPtr("
                 f"*static_cast<Handle_t*>("
-                f"wrenGetSlotForeign(pVm, {slot}))))",
+                f"wrenGetSlotForeign(pVM, {slot}))))",
                 1,
             )
 
@@ -443,12 +443,12 @@ class BindingGenerator:
             return (
                 f"( *static_cast<{base}*>(HandleToPtr("
                 f"*static_cast<Handle_t*>("
-                f"wrenGetSlotForeign(pVm, {slot})))))",
+                f"wrenGetSlotForeign(pVM, {slot})))))",
                 1,
             )
 
         bare = _strip_qualifiers(ntype)
-        result = f"CWrenBindArg<{bare}>::Get(pVm, {slot})".replace(
+        result = f"CWrenBindArg<{bare}>::Get(pVM, {slot})".replace(
             ">>", "> >"
         )
 
@@ -465,7 +465,7 @@ class BindingGenerator:
     ) -> str:
         if self._is_enum(type_kind, type_canonical_kind):
             return (
-                f"wrenSetSlotDouble(pVm, 0, "
+                f"wrenSetSlotDouble(pVM, 0, "
                 f"static_cast<float64>({expr}))"
             )
 
@@ -479,16 +479,16 @@ class BindingGenerator:
             storage = " ".join(ntype.replace(">>", "> >").split())
             return (
                 f"{storage} pRet = {expr}; "
-                 f"if (pRet) wrenSetSlotDouble(pVm, 0, "
+                 f"if (pRet) wrenSetSlotDouble(pVM, 0, "
                 f"static_cast<float64>(PtrToHandle("
                 f"const_cast<void*>("
                 f"reinterpret_cast<const void*>(pRet))))); "
-                f"else wrenSetSlotNull(pVm, 0)"
+                f"else wrenSetSlotNull(pVM, 0)"
             )
 
         bare = _strip_qualifiers(ntype)
 
-        return f"CWrenBindArg<{bare}>::Set(pVm, {expr})".replace(">>", "> >")
+        return f"CWrenBindArg<{bare}>::Set(pVM, {expr})".replace(">>", "> >")
 
     def _build_args(self, params: list["Param"]) -> list[str]:
         arg_exprs: list[str] = []
@@ -557,7 +557,7 @@ class BindingGenerator:
         if fwd_funcs:
             lines.append("")
             for fn in fwd_funcs:
-                lines.append(f"extern void {fn}(WrenVM* pVm);")
+                lines.append(f"extern void {fn}(WrenVM* pVM);")
 
         if not self.all_methods:
             lines.append(
@@ -575,11 +575,11 @@ class BindingGenerator:
             lines.append("}")
             lines.append("WrenForeignClassMethods s_GeneratedClassMethods(")
             lines.append(
-                "\tWrenVM* pVm, const char* pModule, "
+                "\tWrenVM* pVM, const char* pModule, "
                 "const char* pClassName)",
             )
             lines.append("{")
-            lines.append("\t(void)pVm; (void)pModule; (void)pClassName;")
+            lines.append("\t(void)pVM; (void)pModule; (void)pClassName;")
             lines.append("\tWrenForeignClassMethods m = { 0, 0 };")
             lines.append("")
             lines.append("\treturn m;")
@@ -604,16 +604,16 @@ class BindingGenerator:
             if m.is_constructor:
                 arg_exprs = self._build_args(m.params)
                 lines.append("")
-                lines.append(f"static void {func_name}(WrenVM* pVm)")
+                lines.append(f"static void {func_name}(WrenVM* pVM)")
                 lines.append("{")
-                lines.append("\t(void)pVm;")
+                lines.append("\t(void)pVM;")
                 lines.append(
                     f"\tvoid* pMem = CWrenBindAllocator<"
                     f"{cpp_class}>::Alloc(sizeof({cpp_class}));",
                 )
                 lines.append(
                     f"\t*static_cast<Handle_t*>("
-                    f"wrenGetSlotForeign(pVm, 0)) = "
+                    f"wrenGetSlotForeign(pVM, 0)) = "
                     f"PtrToHandle(new(pMem) {cpp_class}("
                     f"{', '.join(arg_exprs)}));",
                 )
@@ -631,7 +631,7 @@ class BindingGenerator:
             else:
                 this_expr = (
                     f"static_cast<{cpp_class}*>("
-                    f"HandleToPtr(GetForeign(pVm, 0)))"
+                    f"HandleToPtr(GetForeign(pVM, 0)))"
                 )
                 use_colon_colon = False
 
@@ -646,7 +646,7 @@ class BindingGenerator:
                 )
 
             lines.append("")
-            lines.append(f"static void {func_name}(WrenVM* pVm)")
+            lines.append(f"static void {func_name}(WrenVM* pVM)")
 
             return_writer = None
             ret = m.return_type if m.return_type else "void"
@@ -663,7 +663,7 @@ class BindingGenerator:
 
             if return_writer is None:
                 lines.append("{")
-                lines.append(f"\t(void)pVm;")
+                lines.append(f"\t(void)pVM;")
                 lines.append(f"\t{call_expr};")
                 lines.append("}")
             else:
@@ -717,10 +717,10 @@ class BindingGenerator:
             lines.append("")
             for cls in sorted(foreign_classes):
                 ftype = foreign_classes[cls]
-                lines.append(f"static void s_Alloc_{cls}(WrenVM* pVm)")
+                lines.append(f"static void s_Alloc_{cls}(WrenVM* pVM)")
                 lines.append("{")
                 lines.append(
-                    "\twrenSetSlotNewForeign(pVm, 0, 0, sizeof(Handle_t));",
+                    "\twrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));",
                 )
                 lines.append("}")
                 lines.append("")
@@ -793,11 +793,11 @@ class BindingGenerator:
 
         lines.append("WrenForeignClassMethods s_GeneratedClassMethods(")
         lines.append(
-            "\tWrenVM* pVm, const char* pModule, "
+            "\tWrenVM* pVM, const char* pModule, "
             "const char* pClassName)",
         )
         lines.append("{")
-        lines.append("\t(void)pVm; (void)pModule;")
+        lines.append("\t(void)pVM; (void)pModule;")
         lines.append("\tWrenForeignClassMethods methods = { 0, 0 };")
         for cls in sorted(foreign_classes):
             lines.append(f'\tif (strcmp(pClassName, "{cls}") == 0)')
@@ -873,11 +873,11 @@ def generate_empty_output(output_file: str) -> None:
         f.write("void CWrenBind::RegisterClasses()\n{\n}\n")
         f.write(
             "WrenForeignClassMethods s_GeneratedClassMethods(\n"
-            "\tWrenVM* pVm, const char* pModule, "
+            "\tWrenVM* pVM, const char* pModule, "
             "const char* pClassName)\n",
         )
         f.write("{\n")
-        f.write("\t(void)pVm; (void)pModule; (void)pClassName;\n")
+        f.write("\t(void)pVM; (void)pModule; (void)pClassName;\n")
         f.write("\tWrenForeignClassMethods m = { 0, 0 };\n")
         f.write("\n\treturn m;\n")
         f.write("}\n")

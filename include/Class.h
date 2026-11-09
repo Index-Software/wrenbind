@@ -19,7 +19,7 @@ class CWrenBindClass
 public:
 	CWrenBindClass(const char* pModule, const char* pClassName);
 
-	WrenHandle* Get(WrenVM* pVm);
+	WrenHandle* Get(WrenVM* pVM);
 
 	const char* Module() const
 	{
@@ -34,7 +34,7 @@ private:
 	CWrenBindClass(const CWrenBindClass&);
 	CWrenBindClass& operator=(const CWrenBindClass&);
 
-	void Find(WrenVM* pVm);
+	void Find(WrenVM* pVM);
 
 	const char* m_pModule;
 	const char* m_pClassName;
@@ -47,9 +47,9 @@ struct CWrenBindClassOf
 {
 	static CWrenBindClass* s_pClass;
 
-	static WrenHandle* Get(WrenVM* pVm)
+	static WrenHandle* Get(WrenVM* pVM)
 	{
-		return s_pClass ? s_pClass->Get(pVm) : WB_NULL;
+		return s_pClass ? s_pClass->Get(pVM) : WB_NULL;
 	}
 };
 
@@ -59,7 +59,7 @@ CWrenBindClass* CWrenBindClassOf<T>::s_pClass = WB_NULL;
 class CWrenBind
 {
 public:
-	static bool Init(WrenVM* pVm);
+	static bool Init(WrenVM* pVM);
 
 	static void RegisterClasses();
 
